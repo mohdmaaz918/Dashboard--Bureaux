@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equifax Underwriting Dashboard</title>
+    <link rel="stylesheet" href="static/styles.css?v=3">
+    <!-- Load FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for client-side Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <h1>Bureau Intel</h1>
+                <p>Advanced Dashboard for Decisioning</p>
+            </div>
+            <button class="export-btn" id="export-btn" style="display:none;" onclick="downloadExcel()">
+                <i class="fas fa-file-excel"></i> Download Excel
+            </button>
+        </header>
+
+        <div class="upload-area" id="dropZone">
+            <input type="file" id="fileInput" accept=".json">
+            <i class="upload-icon fas fa-cloud-upload-alt"></i>
+            <div class="upload-text">Upload Equifax Response JSON</div>
+            <div class="upload-hint">Drag &amp; drop or click to browse</div>
+        </div>
+
+        <!-- Main Dashboard Body -->
+        <div class="dashboard" id="dashboard">
+
+            <!-- Left / Main Content -->
+            <div class="main-column">
+
+                <!-- Context: Identity & Summary -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-id-card" style="color: var(--neutral)"></i> Applicant
+                            Identity</div>
+                        <div style="display:flex; gap:0.75rem; align-items:center;">
+                            <!-- Bureau Model Score Badge -->
+                            <div class="score-pill" id="score-pill">
+                                <span class="score-label">Bureau Score</span>
+                                <span class="score-val" id="model-score">—</span>
+                            </div>
+                            <!-- Review Tier Pill -->
+                            <div class="tier-pill" id="tier-pill">
+                                <span class="tier-label">Review Level</span>
+                                <span class="tier-val" id="review-tier-val">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="identity-grid">
+                        <div class="id-item">
+                            <span class="id-label">Full Name</span>
+                            <span class="id-val" id="id-name">--</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Date of Birth</span>
+                            <span class="id-val" id="id-dob">--</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">SSN</span>
+                            <span class="id-val" id="id-ssn">--</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Report Date</span>
+                            <span class="id-val" id="id-reportdate">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════ RISK PILLARS ═══════════════ -->
+                <div class="section-label"><i class="fas fa-shield-alt"></i> Risk Assessment</div>
+                <div class="card">
+                    <div class="card-header" style="padding-bottom:0.6rem; margin-bottom:0.75rem;">
+                        <div class="card-title">
+                            <i class="fas fa-clipboard-check" style="color:var(--accent-light)"></i>
+                            Underwriting Review
+                        </div>
+                        <span class="badge" id="tier-badge">--</span>
+                    </div>
+                    <p id="tier-guidance-text" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem; font-style:italic;"></p>
+                    <div class="pillars-grid" id="pillars-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- ═══════════════ BALANCE METRICS ═══════════════ -->
+                <div class="section-label"><i class="fas fa-wallet"></i> Balance &amp; Credit Overview</div>
+                <div class="metrics-grid four-col">
+                    <div class="metric-box">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Total Balance (All Accounts)</span>
+                        <span class="m-val" id="metric-total-balance">$0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Total Credit Limit</span>
+                        <span class="m-val" id="metric-credit-limit">$0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-accent"></div>
+                        <span class="m-label">Total High Credit (Peak/Loans)</span>
+                        <span class="m-val" id="metric-high-credit">$0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Unused Credit</span>
+                        <span class="m-val" id="metric-unused-credit">$0</span>
+                    </div>
+                </div>
+
+                <!-- ═══════════════ DEBT METRICS ═══════════════ -->
+                <div class="section-label"><i class="fas fa-hand-holding-usd"></i> Debt &amp; Repayment</div>
+                <div class="metrics-grid">
+                    <!-- Total Debt -->
+                    <div class="metric-box">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Total Active Debt</span>
+                        <span class="m-val" id="metric-debt">$0</span>
+                    </div>
+                    <!-- DSCR -->
+                    <div class="metric-box">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Debt Servicing (DSCR)</span>
+                        <span class="m-val" id="metric-dscr">0.0</span>
+                    </div>
+                    <!-- Average Monthly Obligation -->
+                    <div class="metric-box">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Avg Monthly Obligation</span>
+                        <span class="m-val" id="metric-avg-obligation">$0</span>
+                    </div>
+                    <!-- Utilisation spans 2 cols on larger grids -->
+                    <div class="metric-box" style="grid-column: span 2;">
+                        <div class="m-highlight bg-danger"></div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span class="m-label">Revolving Utilisation</span>
+                            <span class="m-val" id="metric-util-val" style="font-size: 1.4rem;">0%</span>
+                        </div>
+                        <div class="util-bar">
+                            <div class="util-fill" id="util-fill" style="width: 0%; background-color: var(--success);">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════ PAYMENT SUMMARY TILES ═══════════════ -->
+                <div class="metrics-grid two-col">
+                    <div class="metric-box">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Total Actual Payments Made</span>
+                        <span class="m-val text-success" id="metric-actual-pmt">$0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Total Scheduled Payments</span>
+                        <span class="m-val" style="color:var(--warning);" id="metric-sched-pmt">$0</span>
+                    </div>
+                </div>
+
+                <!-- ═══════════════ ACCOUNT MIX ═══════════════ -->
+                <div class="section-label"><i class="fas fa-layer-group"></i> Account Mix</div>
+                <div class="metrics-grid four-col">
+                    <div class="metric-box">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Total Accounts</span>
+                        <span class="m-val" id="metric-total-accounts">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Active Accounts</span>
+                        <span class="m-val" id="metric-active-accounts">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Closed Accounts</span>
+                        <span class="m-val" id="metric-closed-accounts">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-danger"></div>
+                        <span class="m-label">Adverse Accounts</span>
+                        <span class="m-val" id="metric-adverse-count">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-accent"></div>
+                        <span class="m-label">Mortgage Accounts</span>
+                        <span class="m-val" id="metric-mortgage">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Installment Accounts</span>
+                        <span class="m-val" id="metric-installment">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Revolving Accounts</span>
+                        <span class="m-val" id="metric-revolving">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Paying as Agreed</span>
+                        <span class="m-val" id="metric-paying-agreed">0</span>
+                    </div>
+                </div>
+
+                <!-- ═══════════════ CREDIT HISTORY ═══════════════ -->
+                <div class="section-label"><i class="fas fa-calendar-alt"></i> Credit History</div>
+                <div class="metrics-grid three-col">
+                    <div class="metric-box">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Credit Age</span>
+                        <span class="m-val" id="metric-age">0 mos</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-accent"></div>
+                        <span class="m-label">Max Months of History</span>
+                        <span class="m-val" id="metric-max-history">0</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Oldest Account Opened</span>
+                        <span class="m-val" id="metric-oldest-account">—</span>
+                    </div>
+                    <div class="metric-box">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Newest Account Opened</span>
+                        <span class="m-val" id="metric-newest-account">—</span>
+                    </div>
+                </div>
+
+                <!-- Monthly Balance Report Table -->
+                <div class="card" style="overflow-x: auto;">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-list-alt" style="color: var(--accent-light)"></i>
+                            Active Tradelines</div>
+                        <div class="badge" id="account-mix-badge">0 Active / 0 Total</div>
+                    </div>
+                    <table class="accounts-table">
+                        <thead>
+                            <tr>
+                                <th>Lender &amp; Type</th>
+                                <th>Current Balance</th>
+                                <th>Limit / Loan Amt</th>
+                                <th>Utilisation</th>
+                                <th>Scheduled Pmt</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounts-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- Right Side Panel Content -->
+            <div class="side-column">
+
+                <!-- Critical Risk Flags -->
+                <div class="card">
+                    <div class="card-header" style="border-bottom: none; margin-bottom: 0.5rem;">
+                        <div class="card-title"><i class="fas fa-exclamation-triangle text-danger"></i> Risk Flags</div>
+                    </div>
+
+                    <div class="id-item" style="margin-bottom: 1rem;">
+                        <span class="id-label">Address Verification</span>
+                        <span class="id-val" id="id-address-flag">--</span>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span class="id-label">Adverse Findings</span>
+                        <span class="badge" id="adverse-badge">0</span>
+                    </div>
+
+                    <div id="adverse-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Inquiry Velocity -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fas fa-search" style="color: var(--neutral)"></i> Inquiries
+                        </div>
+                        <span class="badge" id="cluster-badge">Normal Velocity</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span class="label">Total Inquiries</span>
+                        <span class="val" id="stat-inq-total">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Last 3 Months</span>
+                        <span class="val" id="stat-inq-3m">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Last 6 Months</span>
+                        <span class="val" id="stat-inq-6m">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Last 12 Months</span>
+                        <span class="val" id="stat-inq-12m">0</span>
+                    </div>
+                </div>
+
+                <!-- Distinct Lenders -->
+                <div class="card">
+                    <div class="card-header" style="border-bottom:none; margin-bottom: 0.5rem;">
+                        <div class="card-title"><i class="fas fa-building" style="color: var(--accent-light)"></i>
+                            Lender Summary</div>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Distinct Active Lenders</span>
+                        <span class="val" id="stat-lenders">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="label">Missing Sched. Payments</span>
+                        <span class="val" id="stat-missing-pmts" style="color:var(--warning);">0</span>
+                    </div>
+                    <div id="missing-payments-list" style="margin-top: 0.75rem;"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script src="static/script.js?v=3"></script>
+</body>
+
+</html>
