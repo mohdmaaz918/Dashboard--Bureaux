@@ -20,16 +20,23 @@
                 <h1>Bureau Intel</h1>
                 <p>Advanced Dashboard for Decisioning</p>
             </div>
-            <button class="export-btn" id="export-btn" style="display:none;" onclick="downloadExcel()">
-                <i class="fas fa-file-excel"></i> Download Excel
-            </button>
+            <div style="display:flex; gap:0.75rem; align-items:center;">
+                <button class="upload-new-btn" id="upload-new-btn" style="display:none;" onclick="resetToUpload()">
+                    <i class="fas fa-upload"></i> Upload New File
+                </button>
+                <button class="export-btn" id="export-btn" style="display:none;" onclick="downloadExcel()">
+                    <i class="fas fa-file-excel"></i> Download Excel
+                </button>
+            </div>
         </header>
 
         <div class="upload-area" id="dropZone">
             <input type="file" id="fileInput" accept=".json">
-            <i class="upload-icon fas fa-cloud-upload-alt"></i>
-            <div class="upload-text">Upload Equifax Response JSON</div>
-            <div class="upload-hint">Drag &amp; drop or click to browse</div>
+            <div id="dropzone-content">
+                <i class="upload-icon fas fa-cloud-upload-alt"></i>
+                <div class="upload-text">Upload Equifax Response JSON</div>
+                <div class="upload-hint">Drag &amp; drop or click to browse</div>
+            </div>
         </div>
 
         <!-- Main Dashboard Body -->
@@ -166,8 +173,96 @@
                     </div>
                 </div>
 
+                <!-- ═══════════════ CANONICAL DECISIONING METRICS ═══════════════ -->
+                <div class="section-label">
+                    <i class="fas fa-database"></i> Canonical Decisioning Metrics
+                    <span class="section-tag">Equifax Mapped</span>
+                </div>
+
+                <!-- Balance row -->
+                <div class="metrics-grid three-col">
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Total Balance on Open Trades</span>
+                        <span class="m-val" id="canon-bal-active">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Revolving Balance</span>
+                        <span class="m-val" id="canon-bal-revolve">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-accent"></div>
+                        <span class="m-label">Revolving Credit Limit</span>
+                        <span class="m-val" id="canon-lim-revolve">—</span>
+                    </div>
+                </div>
+
+                <!-- Utilization row -->
+                <div class="metrics-grid five-col">
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-danger"></div>
+                        <span class="m-label">Rev. Util. 3m</span>
+                        <span class="m-val" id="canon-util-rev3">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-danger"></div>
+                        <span class="m-label">Rev. Util. 6m</span>
+                        <span class="m-val" id="canon-util-rev6">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Bankcard Util. 3m</span>
+                        <span class="m-val" id="canon-util-bc3">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-warning"></div>
+                        <span class="m-label">Bankcard Util. 6m</span>
+                        <span class="m-val" id="canon-util-bc6">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-danger"></div>
+                        <span class="m-label">Max Rev. Util. 3m</span>
+                        <span class="m-val" id="canon-util-maxrev3">—</span>
+                    </div>
+                </div>
+
+                <!-- Conduct + History row -->
+                <div class="metrics-grid three-col">
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-danger"></div>
+                        <span class="m-label">Trades Past Due Ever</span>
+                        <span class="m-val" id="canon-past-due">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-danger"></div>
+                        <span class="m-label">Major Derogatory Ever</span>
+                        <span class="m-val" id="canon-major-derog">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-success"></div>
+                        <span class="m-label">Trades w/ Payment Ever</span>
+                        <span class="m-val" id="canon-pmts-made">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-neutral"></div>
+                        <span class="m-label">Months on Credit File</span>
+                        <span class="m-val" id="canon-mos-file">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-accent"></div>
+                        <span class="m-label">Oldest Trade (Months)</span>
+                        <span class="m-val" id="canon-oldest-trade">—</span>
+                    </div>
+                    <div class="metric-box canonical">
+                        <div class="m-highlight bg-accent"></div>
+                        <span class="m-label">Avg Trade Age (Months)</span>
+                        <span class="m-val" id="canon-avg-age">—</span>
+                    </div>
+                </div>
+
                 <!-- ═══════════════ ACCOUNT MIX ═══════════════ -->
-                <div class="section-label"><i class="fas fa-layer-group"></i> Account Mix</div>
+                <div class="section-label"><i class="fas fa-layer-group"></i> Account Mix <span class="section-tag">Equifax Mapped</span></div>
                 <div class="metrics-grid four-col">
                     <div class="metric-box">
                         <div class="m-highlight bg-neutral"></div>

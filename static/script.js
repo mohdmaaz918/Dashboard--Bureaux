@@ -51,7 +51,7 @@ async function handleFile(file) {
         return;
     }
     isProcessing = true;
-    dropZone.innerHTML = `<div class="upload-text"><i class="fas fa-spinner fa-spin"></i> Processing Report...</div>`;
+    document.getElementById('dropzone-content').innerHTML = `<div class="upload-text"><i class="fas fa-spinner fa-spin"></i> Processing Report...</div>`;
 
     const formData = new FormData();
     formData.append('file', file);
@@ -67,9 +67,11 @@ async function handleFile(file) {
         renderDashboard(data);
         const exportBtn = document.getElementById('export-btn');
         if (exportBtn) exportBtn.style.display = 'flex';
+        const uploadNewBtn = document.getElementById('upload-new-btn');
+        if (uploadNewBtn) uploadNewBtn.style.display = 'flex';
     } catch (err) {
         alert("Error: " + err.message);
-        dropZone.innerHTML = `
+        document.getElementById('dropzone-content').innerHTML = `
             <i class="upload-icon fas fa-cloud-upload-alt"></i>
             <div class="upload-text">Upload Equifax Response JSON</div>
             <div class="upload-hint">Drag &amp; drop or click to browse</div>
@@ -78,6 +80,21 @@ async function handleFile(file) {
         isProcessing = false;
         fileInput.value = "";
     }
+}
+
+// ─── Reset to Upload Screen ────────────────────────────────────
+function resetToUpload() {
+    _lastData = null;
+    fileInput.value = '';
+    document.getElementById('dropzone-content').innerHTML = `
+        <i class="upload-icon fas fa-cloud-upload-alt"></i>
+        <div class="upload-text">Upload Equifax Response JSON</div>
+        <div class="upload-hint">Drag &amp; drop or click to browse</div>
+    `;
+    dashboard.style.display = 'none';
+    dropZone.style.display = '';
+    document.getElementById('export-btn').style.display = 'none';
+    document.getElementById('upload-new-btn').style.display = 'none';
 }
 
 // ─── Main Render ───────────────────────────────────────────────
@@ -163,6 +180,26 @@ function renderDashboard(data) {
             addrElem.className   = "id-val text-success";
         }
     }
+
+    // ── CANONICAL DECISIONING METRICS ────────────────────────
+    const fmtPct = v => (v == null ? "—" : v.toFixed(2) + "%");
+    const fmtCur = v => (v == null ? "—" : formatCurrency(v));
+    const fmtInt = v => (v == null ? "—" : Math.round(v));
+
+    setText('canon-bal-active',   fmtCur(m["Total Balance on Open Trades"]));
+    setText('canon-bal-revolve',  fmtCur(m["Revolving Balance"]));
+    setText('canon-lim-revolve',  fmtCur(m["Revolving Credit Limit"]));
+    setText('canon-util-rev3',    fmtPct(m["Revolving Utilization 3m (%)"]));
+    setText('canon-util-rev6',    fmtPct(m["Revolving Utilization 6m (%)"]));
+    setText('canon-util-bc3',     fmtPct(m["Bankcard Utilization 3m (%)"]));
+    setText('canon-util-bc6',     fmtPct(m["Bankcard Utilization 6m (%)"]));
+    setText('canon-util-maxrev3', fmtPct(m["Max Revolving Utilization 3m (%)"]));
+    setText('canon-past-due',     fmtInt(m["Trades Past Due Ever"]));
+    setText('canon-major-derog',  fmtInt(m["Major Derogatory Trades Ever"]));
+    setText('canon-pmts-made',    fmtInt(m["Trades with Payment Made Ever"]));
+    setText('canon-mos-file',     fmtInt(m["Months on Credit File"]));
+    setText('canon-oldest-trade', fmtInt(m["Oldest Trade Age (Months)"]));
+    setText('canon-avg-age',      fmtInt(m["Average Trade Age (Months)"]));
 
     // ── BALANCE & CREDIT OVERVIEW ────────────────────────────
     setText('metric-total-balance',  formatCurrency(m["Total Balance (All Accounts)"]));
@@ -336,7 +373,7 @@ function downloadExcel() {
     wsSum['!cols'] = [{wch: 36}, {wch: 28}];
     XLSX.utils.book_append_sheet(wb, wsSum, "Summary");
 
-    // ── Sheet 2: Key Metrics ──────────────────────────────────
+    // ── Sheet 2: Key Metrics (raw tradeline) ─────────────────
     const metricOrder = [
         "Total Balance (All Accounts)",
         "Total Credit Limit",
@@ -375,7 +412,35 @@ function downloadExcel() {
     wsMetrics['!cols'] = [{wch: 42}, {wch: 20}];
     XLSX.utils.book_append_sheet(wb, wsMetrics, "Key Metrics");
 
-    // ── Sheet 3: Active Tradelines ────────────────────────────
+    // ── Sheet 3: Canonical Decisioning Metrics ───────────────
+    const canonOrder = [
+        ["Total Accounts (Equifax attr 4140)",        "Total Accounts"],
+        ["Open Trades (Equifax attr 4173)",           "Active Accounts"],
+        ["Closed/Settled Trades",                     "Closed Accounts"],
+        ["Total Balance on Open Trades (attr 4749)",  "Total Balance on Open Trades"],
+        ["Revolving Balance (trade-level computed)",  "Revolving Balance"],
+        ["Revolving Credit Limit (trade-level)",      "Revolving Credit Limit"],
+        ["Revolving Utilization 3m % (attr 4945)",    "Revolving Utilization 3m (%)"],
+        ["Revolving Utilization 6m % (attr 4946)",    "Revolving Utilization 6m (%)"],
+        ["Bankcard Utilization 3m % (attr 4932)",     "Bankcard Utilization 3m (%)"],
+        ["Bankcard Utilization 6m % (attr 4933)",     "Bankcard Utilization 6m (%)"],
+        ["Retail Revolving Util 3m % (attr 4938)",    "Retail Revolving Utilization 3m (%)"],
+        ["Max Revolving Util 3m % (attr 5048)",       "Max Revolving Utilization 3m (%)"],
+        ["Trades Past Due Ever (attr 4202)",          "Trades Past Due Ever"],
+        ["Major Derogatory Trades Ever (attr 3542)",  "Major Derogatory Trades Ever"],
+        ["Trades w/ Payment Made Ever (attr 3497)",   "Trades with Payment Made Ever"],
+        ["Months on Credit File (attr 5798)",         "Months on Credit File"],
+        ["Oldest Trade Age Months (attr 3001)",       "Oldest Trade Age (Months)"],
+        ["Average Trade Age Months (attr 3108)",      "Average Trade Age (Months)"],
+    ];
+    const canonRows = [["Field (Equifax Attribute)", "Value"],
+        ...canonOrder.map(([label, key]) => [label, m[key] != null ? m[key] : "N/A"])
+    ];
+    const wsCanon = XLSX.utils.aoa_to_sheet(canonRows);
+    wsCanon['!cols'] = [{wch: 52}, {wch: 18}];
+    XLSX.utils.book_append_sheet(wb, wsCanon, "Canonical Metrics");
+
+    // ── Sheet 4: Active Tradelines ────────────────────────────
     const trades = _lastData.monthly_balance_report || [];
     if (trades.length > 0) {
         const headers   = Object.keys(trades[0]);

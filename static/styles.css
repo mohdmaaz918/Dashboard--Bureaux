@@ -233,12 +233,17 @@ header {
 
 /* Explicit column overrides */
 .metrics-grid.four-col  { grid-template-columns: repeat(4, 1fr); }
-.metrics-grid.three-col { grid-template-columns: repeat(4, 1fr); }
+.metrics-grid.three-col { grid-template-columns: repeat(3, 1fr); }
+.metrics-grid.five-col  { grid-template-columns: repeat(5, 1fr); }
 .metrics-grid.two-col   { grid-template-columns: repeat(2, 1fr); }
 
+@media (max-width: 1200px) {
+  .metrics-grid.five-col  { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 1100px) {
   .metrics-grid.four-col  { grid-template-columns: repeat(2, 1fr); }
   .metrics-grid.three-col { grid-template-columns: repeat(2, 1fr); }
+  .metrics-grid.five-col  { grid-template-columns: repeat(2, 1fr); }
 }
 
 .metric-box {
@@ -392,6 +397,29 @@ header {
 }
 .export-btn:active { transform: scale(0.97); }
 
+.upload-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.4rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.upload-new-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+.upload-new-btn:active { transform: scale(0.97); }
+
 /* ─── Tier Pill ─────────────────────────────────── */
 .tier-pill {
   display: flex;
@@ -484,6 +512,30 @@ header {
 /* Extended badge variants */
 .badge.warning { background: rgba(255,234,0,0.1);  color: var(--warning); border: 1px solid var(--warning); }
 .badge.neutral { background: rgba(0,229,255,0.1);  color: var(--neutral); border: 1px solid var(--neutral); }
+
+/* ─── Canonical metric boxes ────────────────────── */
+.metric-box.canonical {
+  border-color: rgba(124, 77, 255, 0.2);
+  background: rgba(124, 77, 255, 0.04);
+}
+.metric-box.canonical:hover {
+  background: rgba(124, 77, 255, 0.08);
+  box-shadow: 0 6px 20px rgba(124, 77, 255, 0.15);
+}
+
+/* Section tag (e.g. "Equifax Mapped") */
+.section-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  background: rgba(124, 77, 255, 0.12);
+  border: 1px solid rgba(124, 77, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+  margin-left: 0.25rem;
+}
 
 /* Missing payment lender chips */
 .missing-chip {

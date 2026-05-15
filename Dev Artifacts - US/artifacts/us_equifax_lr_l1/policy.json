@@ -1,0 +1,26 @@
+{
+  "score_mapping": "score = round(100 * P(paid), 2)",
+  "bands": {
+    "APPROVE": {
+      "min_score": 65.0
+    },
+    "REFER": {
+      "min_score": 60.0,
+      "max_score": 64.99
+    },
+    "DECLINE": {
+      "max_score": 59.99
+    }
+  },
+  "guardrails": {
+    "thin_file": {
+      "enabled": true,
+      "rule": "If critical summary fields are missing or totalaccounts is missing -> REFER",
+      "critical_fields": [
+        "attr__summary.share.totalaccounts",
+        "attr__creditscore.class_10.score",
+        "attr__creditscore.class_11.score"
+      ]
+    }
+  }
+}
