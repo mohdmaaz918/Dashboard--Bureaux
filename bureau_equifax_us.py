@@ -43,6 +43,7 @@ try:
     )
     _EQX_ADAPTER: Any = _EquifaxJsonAdapter()
     _CANONICAL_PIPELINE_OK = True
+    print("[bureau_equifax_us] Canonical pipeline loaded OK.", file=sys.stderr)
 except Exception as _canon_err:
     # Log the real reason so it appears in Render / server logs.
     print(
@@ -471,9 +472,19 @@ def _build_canonical_feats(raw_payload: dict, model_score: Any = None) -> dict:
 def _build_feats(parsed: dict, raw_metrics: dict) -> dict:
     """Return feats dict for risk pillars. Primary: canonical pipeline. Fallback: raw approximations."""
     if _CANONICAL_PIPELINE_OK and parsed.get("raw_payload"):
-        return _build_canonical_feats(parsed["raw_payload"], model_score=parsed.get("model_score"))
+        try:
+            feats = _build_canonical_feats(parsed["raw_payload"], model_score=parsed.get("model_score"))
+            print(f"[bureau_equifax_us] Canonical feats built OK — {len(feats)} keys.", file=sys.stderr)
+            return feats
+        except Exception as _rt_err:
+            print(
+                f"[bureau_equifax_us] Canonical pipeline RUNTIME ERROR — falling back to raw.\n"
+                f"  Reason: {_rt_err}\n{traceback.format_exc()}",
+                file=sys.stderr,
+            )
 
     # Fallback — raw tradeline approximations (canonical keys, not contaminated across buckets)
+    print(f"[bureau_equifax_us] Using raw fallback. _CANONICAL_PIPELINE_OK={_CANONICAL_PIPELINE_OK}", file=sys.stderr)
     trades   = parsed["trades_df"]
     identity = parsed["identity"]
     if trades.empty:
