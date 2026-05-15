@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import sys
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -42,7 +43,14 @@ try:
     )
     _EQX_ADAPTER: Any = _EquifaxJsonAdapter()
     _CANONICAL_PIPELINE_OK = True
-except Exception:
+except Exception as _canon_err:
+    # Log the real reason so it appears in Render / server logs.
+    print(
+        f"[bureau_equifax_us] Canonical pipeline import FAILED — canonical metrics will be blank.\n"
+        f"  Reason: {_canon_err}\n"
+        f"  Traceback:\n{traceback.format_exc()}",
+        file=sys.stderr,
+    )
     # Graceful fallback — dashboard still runs but uses raw tradeline values.
     _EQX_ADAPTER = None
     _build_features = None
